@@ -1,9 +1,8 @@
 [build]
-builder = "dockerfile"
+builder = "nixpacks"
 
 [deploy]
-healthcheckPath = "/health"
-healthcheckTimeout = 30
+startCommand = "python start.py"
 restartPolicyType = "always"
 
 [env]

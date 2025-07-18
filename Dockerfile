@@ -3,31 +3,23 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    && rm -rf /var/lib/apt/lists/*
+# Copy requirements file first (better caching)
+COPY packages.txt requirements.txt ./
 
-# Copy requirements file
-COPY requirements.txt .
-
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+# Install Python dependencies directly without gcc
+RUN pip install --no-cache-dir discord.py python-dotenv aiohttp pytz apscheduler requests
 
 # Copy application code
 COPY . .
 
 # Create non-root user for security
-RUN useradd --create-home --shell /bin/bash botuser
-RUN chown -R botuser:botuser /app
+RUN useradd --create-home --shell /bin/bash botuser && \
+    chown -R botuser:botuser /app
+
 USER botuser
 
-# Expose port (not used for Discord bot, but Railway expects it)
+# Expose port (Railway expects this)
 EXPOSE 8000
-
-# Health check endpoint (optional - creates simple HTTP server for health checks)
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python -c "import requests; requests.get('http://localhost:8000/health', timeout=5)" || exit 1
 
 # Run the bot
 CMD ["python", "main.py"]
