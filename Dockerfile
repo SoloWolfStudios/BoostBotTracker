@@ -3,10 +3,7 @@ FROM python:3.11-slim
 # Set working directory
 WORKDIR /app
 
-# Copy requirements file first (better caching)
-COPY packages.txt requirements.txt ./
-
-# Install Python dependencies directly without gcc
+# Install Python dependencies directly
 RUN pip install --no-cache-dir discord.py python-dotenv aiohttp pytz apscheduler requests
 
 # Copy application code
