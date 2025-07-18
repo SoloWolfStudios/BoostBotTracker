@@ -32,12 +32,16 @@ The bot follows a modular architecture with separate components:
 - Manages bot configuration and component initialization
 - Handles Discord intents and command prefix
 - Coordinates between API, scheduler, and embed builder
+- Registers all slash commands for user interaction
 
 ### TibiaAPI (bot/tibia_api.py)
 - Handles all HTTP requests to TibiaData API v4
 - Implements connection pooling with aiohttp
 - Provides retry logic for failed requests
 - Manages session lifecycle and cleanup
+- **NEW**: Fallback to TibiaWiki scraping when TibiaData API fails
+- **NEW**: HTML parsing for creature information extraction
+- **NEW**: Graceful degradation with fallback creature data
 
 ### EmbedBuilder (bot/embed_builder.py)
 - Creates rich Discord embeds for creature and boss announcements

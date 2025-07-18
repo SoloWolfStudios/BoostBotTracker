@@ -216,9 +216,9 @@ async def update_command(interaction: discord.Interaction):
         logger.error(f"Error in update command: {e}")
         await interaction.followup.send(f"❌ Command failed: {str(e)}", ephemeral=True)
 
-@discord.app_commands.command(name="status", description="Check current boosted creature and boss")
-async def status_command(interaction: discord.Interaction):
-    """Slash command to check current boosted status"""
+@discord.app_commands.command(name="creature", description="Check current boosted creature details")
+async def creature_status_command(interaction: discord.Interaction):
+    """Slash command to check current boosted creature status"""
     await interaction.response.defer()
     
     try:
@@ -229,25 +229,156 @@ async def status_command(interaction: discord.Interaction):
             await interaction.followup.send("❌ Failed to fetch boosted data", ephemeral=True)
             return
         
-        creature = boosted_data.get('boosted_creature', 'Unknown')
-        boss = boosted_data.get('boosted_boss', 'Unknown')
+        creature_name = boosted_data.get('boosted_creature', 'Unknown')
         
-        embed = discord.Embed(
-            title="📊 Current Boosted Status",
-            color=0x00ff88,
-            timestamp=datetime.utcnow()
-        )
+        if creature_name == 'Unknown':
+            await interaction.followup.send("❌ No boosted creature found", ephemeral=True)
+            return
+            
+        # Get detailed creature information
+        creature_details = await bot.tibia_api.get_creature_details(creature_name)
         
-        embed.add_field(name="🦎 Boosted Creature", value=creature, inline=True)
-        embed.add_field(name="👹 Boosted Boss", value=boss, inline=True)
-        embed.add_field(name="⏰ Next Reset", value="Daily at 10:00 CEST", inline=False)
-        
-        embed.set_footer(text="Data from TibiaData API")
+        # Build embed
+        embed = bot.embed_builder.create_creature_embed(creature_name, creature_details, boosted_data)
+        embed.title = f"📊 Current Boosted Creature Status"
         
         await interaction.followup.send(embed=embed, ephemeral=True)
         
     except Exception as e:
-        logger.error(f"Error in status command: {e}")
+        logger.error(f"Error in creature status command: {e}")
+        await interaction.followup.send(f"❌ Command failed: {str(e)}", ephemeral=True)
+
+@discord.app_commands.command(name="boss", description="Check current boosted boss details")
+async def boss_status_command(interaction: discord.Interaction):
+    """Slash command to check current boosted boss status"""
+    await interaction.response.defer()
+    
+    try:
+        bot = interaction.client
+        boosted_data = await bot.tibia_api.get_boosted_creatures()
+        
+        if not boosted_data:
+            await interaction.followup.send("❌ Failed to fetch boosted data", ephemeral=True)
+            return
+        
+        boss_name = boosted_data.get('boosted_boss', 'Unknown')
+        
+        if boss_name == 'Unknown':
+            await interaction.followup.send("❌ No boosted boss found", ephemeral=True)
+            return
+            
+        # Get detailed boss information
+        boss_details = await bot.tibia_api.get_creature_details(boss_name)
+        
+        # Build embed
+        embed = bot.embed_builder.create_boss_embed(boss_name, boss_details, boosted_data)
+        embed.title = f"📊 Current Boosted Boss Status"
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in boss status command: {e}")
+        await interaction.followup.send(f"❌ Command failed: {str(e)}", ephemeral=True)
+
+@discord.app_commands.command(name="next", description="Show when the next server save occurs")
+async def next_save_command(interaction: discord.Interaction):
+    """Slash command to show next server save time"""
+    await interaction.response.defer()
+    
+    try:
+        from datetime import datetime, timedelta
+        import pytz
+        
+        # Central European timezone
+        cet = pytz.timezone('Europe/Berlin')
+        now = datetime.now(cet)
+        
+        # Next server save is at 10:00 CEST daily
+        next_save = now.replace(hour=10, minute=0, second=0, microsecond=0)
+        
+        # If it's already past 10:00 today, move to tomorrow
+        if now.hour >= 10:
+            next_save += timedelta(days=1)
+        
+        # Calculate time until next save
+        time_until = next_save - now
+        hours = int(time_until.total_seconds() // 3600)
+        minutes = int((time_until.total_seconds() % 3600) // 60)
+        
+        embed = discord.Embed(
+            title="⏰ Next Server Save",
+            color=0x3498db,
+            timestamp=datetime.utcnow()
+        )
+        
+        embed.add_field(name="🕙 Next Save Time", value=f"{next_save.strftime('%H:%M %Z')}", inline=True)
+        embed.add_field(name="⏳ Time Until", value=f"{hours}h {minutes}m", inline=True)
+        embed.add_field(name="📅 Date", value=next_save.strftime('%Y-%m-%d'), inline=True)
+        
+        embed.add_field(
+            name="📝 What Resets at Server Save",
+            value="• Boosted Creature\n• Boosted Boss\n• Daily Rewards\n• Rashid Location\n• Boss Cooldowns",
+            inline=False
+        )
+        
+        bot = interaction.client
+        embed.set_footer(text=f"{bot.embed_builder.bot_icon} TibiaBot", icon_url=bot.embed_builder.custom_icon_url)
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in next save command: {e}")
+        await interaction.followup.send(f"❌ Command failed: {str(e)}", ephemeral=True)
+
+@discord.app_commands.command(name="schedule", description="Show the bot's automatic posting schedule")
+async def schedule_command(interaction: discord.Interaction):
+    """Slash command to show bot's posting schedule"""
+    await interaction.response.defer()
+    
+    try:
+        bot = interaction.client
+        
+        embed = discord.Embed(
+            title="📅 Bot Schedule",
+            description="When the bot automatically checks and posts updates",
+            color=0x9b59b6,
+            timestamp=datetime.utcnow()
+        )
+        
+        embed.add_field(
+            name="🕰️ Primary Check",
+            value="**10:06 CEST** daily\n(4 minutes after server boot)",
+            inline=True
+        )
+        
+        embed.add_field(
+            name="🔄 Backup Check", 
+            value="**10:36 CEST** daily\n(In case primary fails)",
+            inline=True
+        )
+        
+        embed.add_field(
+            name="🎯 Smart Detection",
+            value="Only posts when creatures/bosses change\n(No spam!)",
+            inline=False
+        )
+        
+        # Show next scheduled check if scheduler is available
+        if hasattr(bot, 'scheduler') and bot.scheduler:
+            next_check = bot.scheduler.get_next_check_time()
+            if next_check:
+                embed.add_field(
+                    name="⏰ Next Check",
+                    value=f"<t:{int(next_check.timestamp())}:R>",
+                    inline=False
+                )
+        
+        embed.set_footer(text=f"{bot.embed_builder.bot_icon} TibiaBot", icon_url=bot.embed_builder.custom_icon_url)
+        
+        await interaction.followup.send(embed=embed, ephemeral=True)
+        
+    except Exception as e:
+        logger.error(f"Error in schedule command: {e}")
         await interaction.followup.send(f"❌ Command failed: {str(e)}", ephemeral=True)
 
 async def main():
@@ -271,7 +402,10 @@ async def main():
     
     # Add slash commands to bot
     bot.tree.add_command(update_command)
-    bot.tree.add_command(status_command)
+    bot.tree.add_command(creature_status_command)
+    bot.tree.add_command(boss_status_command)
+    bot.tree.add_command(next_save_command)
+    bot.tree.add_command(schedule_command)
     
     try:
         await bot.start(token)

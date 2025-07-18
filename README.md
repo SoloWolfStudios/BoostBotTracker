@@ -92,7 +92,10 @@ python main.py
 The bot includes these slash commands:
 
 - `/update` - Force check and post current boosted creature/boss
-- `/status` - Show current boosted creature and boss information
+- `/creature` - Show detailed information about current boosted creature
+- `/boss` - Show detailed information about current boosted boss
+- `/next` - Show when the next server save occurs
+- `/schedule` - Show the bot's automatic posting schedule
 
 ## How It Works
 
