@@ -102,3 +102,13 @@ The bot follows a modular architecture with separate components:
 - Comprehensive error handling and retry logic
 - Grace periods for missed scheduled jobs
 - Session management for long-running connections
+
+## Recent Changes: Latest modifications with dates
+
+### July 18, 2025
+- **FIXED**: API endpoint bug - creatures now correctly detected using /v4/creatures instead of /v4/world/Antica
+- **ENHANCED**: Added /creature and /boss commands with detailed information
+- **ADDED**: /next command - shows next server save countdown
+- **ADDED**: /schedule command - shows bot's posting schedule
+- **IMPROVED**: Multi-source data strategy (TibiaData API + TibiaWiki fallback)
+- **IMPROVED**: Better error handling and logging for data source tracking
